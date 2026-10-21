@@ -1,0 +1,2 @@
+# o entrypoint roda dentro do alpine, entao nao pode virar CRLF no windows
+*.sh text eol=lf
