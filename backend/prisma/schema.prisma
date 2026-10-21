@@ -1,0 +1,44 @@
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+model Usuario {
+  id        String    @id @default(uuid())
+  nome      String
+  sobrenome String    @default("")
+  email     String    @unique
+  senha     String
+  criadoEm  DateTime  @default(now())
+
+  veiculos  Veiculo[]
+}
+
+model Veiculo {
+  id             String   @id @default(uuid())
+  placa          String
+  renavam        String
+  chassi         String
+  marca          String
+  modelo         String
+  anoFabricacao  Int
+  anoModelo      Int
+  cor            String
+  combustivel    String
+  tipo           String
+  apelido        String?
+  fotoUrl        String?
+  criadoEm       DateTime @default(now())
+  atualizadoEm   DateTime @updatedAt
+
+  usuarioId      String
+  usuario        Usuario  @relation(fields: [usuarioId], references: [id], onDelete: Cascade)
+
+  // a mesma placa não pode ser cadastrada 2x pelo mesmo usuario
+  @@unique([usuarioId, placa])
+}
