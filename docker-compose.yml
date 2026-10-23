@@ -1,0 +1,54 @@
+services:
+  # banco de dados
+  banco:
+    image: postgres:16-alpine
+    container_name: drivo-banco
+    restart: always
+    environment:
+      POSTGRES_USER: drivo
+      POSTGRES_PASSWORD: drivo123
+      POSTGRES_DB: drivo
+    ports:
+      - '5432:5432'
+    volumes:
+      - dados_do_banco:/var/lib/postgresql/data
+    # esse healthcheck serve pra API só subir depois que o banco estiver realmente aceitando conexão
+    healthcheck:
+      test: ['CMD-SHELL', 'pg_isready -U drivo -d drivo']
+      interval: 5s
+      timeout: 5s
+      retries: 10
+
+  # API
+  backend:
+    build: ./backend
+    container_name: drivo-backend
+    restart: always
+    depends_on:
+      banco:
+        condition: service_healthy
+    environment:
+      DATABASE_URL: 'postgresql://drivo:drivo123@banco:5432/drivo?schema=public'
+      PORT: 3333
+      CORS_ORIGIN: ${CORS_ORIGIN:-http://localhost:3000}
+      JWT_SECRET: ${JWT_SECRET:-segredo_do_drivo_dev}
+      GEMINI_API_KEY: ${GEMINI_API_KEY}
+      GEMINI_MODEL: ${GEMINI_MODEL:-gemini-3.5-flash}
+    ports:
+      - '3333:3333'
+
+  # site
+  frontend:
+    build:
+      context: ./frontend
+      args:
+        NEXT_PUBLIC_API_URL: 'http://localhost:3333'
+    container_name: drivo-frontend
+    restart: always
+    depends_on:
+      - backend
+    ports:
+      - '3000:3000'
+
+volumes:
+  dados_do_banco:
